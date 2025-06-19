@@ -39,7 +39,7 @@ We will also use an internal package:
 
 <center>
 
-<img src="./Images/LWPTrends.jpg" style="width:40.0%" />
+<img src="./Images/LWPTrends.jpg" style="width:40.0%;" />
 </center>
 
 LWPTrends will need to be installed manually from a tar file:
