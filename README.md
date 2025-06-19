@@ -133,10 +133,7 @@ You can do this in one line of code. Finally, select the columns:
 
 <details>
 
-<summary>
-
-<b>Click to see a solution</b>
-</summary>
+<summary><b>Click to see a solution</b></summary>
 
 ``` r
 MCI_Data <- MCI_Data %>%
@@ -306,10 +303,7 @@ object to see if anything has changed*
 
 <details>
 
-<summary style="display: inline-block;">
-
-<b>Click to see a solution</b>
-</summary>
+<summary><b>Click to see a solution</b></summary>
 
 ``` r
 MCI_Inspect <- InspectTrendData(MCI_Data,
@@ -437,10 +431,7 @@ the Time column is formatted as a timestamp. *
 
 <details>
 
-<summary style="display: inline-block;">
-
-<b>Click to see a solution</b>
-</summary>
+<summary><b>Click to see a solution</b></summary>
 
 ``` r
 WQ_Data <- read.csv("./Datasets/DF_for_Trends.csv")
@@ -463,10 +454,7 @@ can also add ‘colour=analyte’ for geom_point if you wish.*
 
 <details>
 
-<summary style="display: inline-block;">
-
-<b>Click to see a solution</b>
-</summary>
+<summary><b>Click to see a solution</b></summary>
 
 ``` r
 WQ_Data %>%
@@ -550,10 +538,7 @@ WQ_Data*
 
 <details>
 
-<summary style="display: inline-block;">
-
-<b>Click to see a solution</b>
-</summary>
+<summary><b>Click to see a solution</b></summary>
 
 ``` r
 #run the outliers function.  This creates a dataset of outlier values
@@ -619,10 +604,7 @@ date with the name ‘myDate’*
 
 <details>
 
-<summary style="display: inline-block;">
-
-<b>Click to see a solution</b>
-</summary>
+<summary><b>Click to see a solution</b></summary>
 
 ``` r
 NNN_Te_Teko <- NNN_Te_Teko %>% 
@@ -714,10 +696,7 @@ conclusion of whether the data is seasonal or not.*
 
 <details>
 
-<summary style="display: inline-block;">
-
-<b>Click to see a solution</b>
-</summary>
+<summary><b>Click to see a solution</b></summary>
 
 ``` r
 Season_Output[[2]]
@@ -921,10 +900,8 @@ is more appropriate?*
 
 <details>
 
-<summary style="display: inline-block;">
+<summary><b>Click to see a solution</b></summary>
 
-<b>Click to see a solution</b>
-</summary>
 
 ``` r
 Trend_Analysis_Output_NNN_Te_Teko_Raw <-SeasonalTrendAnalysis(NNN_Te_Teko, ValuesToUse="RawValue", ValuesToUseforMedian="RawValue", mymain="Example 1a: Flow Adjusted Trend", do.plot=T)
