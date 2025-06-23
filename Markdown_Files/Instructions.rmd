@@ -701,7 +701,7 @@ ___
 
 ```{r message=FALSE}
 
-Trend_Analysis_Output_NNN_Te_Teko_Raw <-SeasonalTrendAnalysis(NNN_Te_Teko, ValuesToUse="RawValue", ValuesToUseforMedian="RawValue", mymain="Example 1a: Flow Adjusted Trend", do.plot=T)
+Trend_Analysis_Output_NNN_Te_Teko_Raw <-SeasonalTrendAnalysis(NNN_Te_Teko, ValuesToUse="RawValue", ValuesToUseforMedian="RawValue", mymain="Example 1b:  Raw Trend", do.plot=T)
 
 Trend_Analysis_Output_NNN_Te_Teko_Raw[[2]]
 

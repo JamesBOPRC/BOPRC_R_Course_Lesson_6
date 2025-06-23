@@ -149,6 +149,7 @@ one line of code if you want!*
 <details>
 
 <summary><b>Click to see a solution</b></summary>
+
 ``` r
 MCI_Data <- MCI_Data %>%
     mutate(myDate = as.Date(paste0(Year, "-01-01"), tz = "etc/GMT+12"))
@@ -660,6 +661,7 @@ date with the name ‘myDate’*
 <details>
 
 <summary><b>Click to see a solution</b></summary>
+
 ``` r
 NNN_Te_Teko <- NNN_Te_Teko %>% 
   mutate(myDate = as.Date(Time,tz="etc/GMT+12")) %>% 
@@ -960,7 +962,7 @@ is more appropriate?*
 <summary><b>Click to see a solution</b></summary>
 
 ``` r
-Trend_Analysis_Output_NNN_Te_Teko_Raw <-SeasonalTrendAnalysis(NNN_Te_Teko, ValuesToUse="RawValue", ValuesToUseforMedian="RawValue", mymain="Example 1a: Flow Adjusted Trend", do.plot=T)
+Trend_Analysis_Output_NNN_Te_Teko_Raw <-SeasonalTrendAnalysis(NNN_Te_Teko, ValuesToUse="RawValue", ValuesToUseforMedian="RawValue", mymain="Example 1b:  Raw Trend", do.plot=T)
 
 Trend_Analysis_Output_NNN_Te_Teko_Raw[[2]]
 ```
