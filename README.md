@@ -39,7 +39,7 @@ We will also use an internal package:
 
 <center>
 
-<img src="./Images/LWPTrends.jpg" style="width:40.0%;" />
+<img src="./Images/LWPTrends.jpg" style="width:40.0%" />
 </center>
 
 LWPTrends will need to be installed manually from a tar file:
@@ -75,6 +75,10 @@ allows us to tell R to prefer the ‘dplyr’ versions of these functions
 over the ‘plyr’ versions. There are only seven conflicted functions so
 it shouldn’t affect the functionality of the ‘LWPTrends’ package.
 
+You won’t have to use the ‘conflicted’ package very often, but it
+definitely helps solve the problems that occur when you try to use
+‘tidyverse’ and ‘LWPTrends’ at the same time.
+
 ``` r
 conflict_prefer("summarise", "dplyr")
 conflict_prefer("mutate", "dplyr")
@@ -88,10 +92,11 @@ conflict_prefer("filter", "dplyr")
 
 Today we will be looking at two different datasets which we will use to
 run two different variants of trend analysis. We will start with a
-simple example of annual MCI data from ‘Waiari at Te Puke Highway’,
-before moving on to a monthly NNN dataset from Rangitaiki at Te Teko. We
-will use the latter to demonstrate seasonal and co-variate (flow)
-adjustment. Both datasets can be found in the ‘Datasets’ folder.
+simple example of annual Macroinvertebrate Community Index data from
+‘Waiari at Te Puke Highway’, before moving on to a monthly NNN dataset
+from Rangitaiki at Te Teko. We will use the latter to demonstrate
+seasonal and co-variate (flow) adjustment. Both datasets can be found in
+the ‘Datasets’ folder.
 
   
 
@@ -108,28 +113,38 @@ data panel (upper right corner). Notice that there are no date or time
 stamps. We only have a ‘Period’ to work with. Trend analysis requires a
 time stamp, so let’s convert the period into a date where we assume the
 sample is collected on the 1st January each year. First we need to
-create a column called ‘Year’ which takes the year component from the
-‘Period’ string. The substring function allows you to subset a string,
-you just need to provide a point to start and end. In this case, we want
-to start at the 1st character and end at the 4th character.
+create a column called ‘Year’ which takes the first 4-digit component
+from the ‘Period’ string. The substring function allows you to subset a
+string, you just need to provide a point to start and end. In this case,
+we want to start at the 1st character and end at the 4th character.
+
+If we take ‘Year’ in this way, the number will represent the year that
+the survey began. We really want an arbitrary date in the middle of the
+sampling season so let’s convert the string to a numeric and add 1 to
+get the correct year for a mid-season Jan-1st date.
 
 ``` r
 MCI_Data <- MCI_Data %>%
-    mutate(Year = substring(Period, 1, 4))
+    mutate(Year = as.numeric(substring(Period, 1, 4)) + 1)
 ```
 
+Open up MCI_Data and take a look. You should see a new column called
+‘Year’ which shows the first 4 digit component of the ‘Period’ column
+with 1 added to it.
+
 Now we need to convert the year into a date object where the day and
-month will be ‘01-01’ i.e., the 1st of January.
+month will be ‘01-01’ i.e., the 1st of January. We need to create a new
+column called ‘myDate’ formatted in the correct date format, so that
+‘LWPTrends’ knows which season the sample was collected in.
 
 ------------------------------------------------------------------------
 
 ***Challenge 1:*** *Create another column called ‘myDate’ which is equal
 to the column ‘Year’ combined with ‘01-01’. Hint - you will need to do
-this in two steps. First create a string using the ‘paste0’ combined
-with ‘01-01’. Secondly, convert that string to a Date using as.Date().
-You can do this in one line of code. Finally, select the columns:
-‘Aquarius.\_SIteID’,‘myDate’,‘MCI’, and create a new column called
-‘analyte’ which is equal to “MCI”.*
+this in two steps. First create a string using the ‘paste0()’ function
+which combines the Year column with the string ‘01-01’. Secondly,
+convert that string to a Date using as.Date(). You can do all of this in
+one line of code if you want!*
 
 <details>
 
@@ -137,23 +152,44 @@ You can do this in one line of code. Finally, select the columns:
 
 ``` r
 MCI_Data <- MCI_Data %>%
-    mutate(myDate = as.Date(paste0(Year, "-01-01"), tz = "etc/GMT+12")) %>%
-    select(Aquarius._SIteID, myDate, MCI) %>%
-    mutate(analyte = "MCI")
+    mutate(myDate = as.Date(paste0(Year, "-01-01"), tz = "etc/GMT+12"))
 ```
 
 </details>
 
 ------------------------------------------------------------------------
 
-Great. Look at your dataset and you should have four columns:
-‘Aquarius.\_SIteID’,‘myDate’,‘MCI’, and ‘analyte’. The LWPTrends package
-requires specific names for some columns in order for functions to work.
-The timestamp should be in a date format called ‘myDate’ and the
-parameter should be called ‘analyte’.
+Great. We only need three columns to run trend analysis, so we will use
+the select() function to select the columns:
+‘Aquarius.\_SIteID’,‘myDate’,‘MCI’. MCI data is the only analyte that
+LWPTrends will allow an annual time-interval for, so we need to make
+sure that it knows we are dealing with this type of data. LWPTrends
+looks for a column called ‘analyte’ to confirm the data type, so we will
+add this in using the mutate() function. The LWPTrends package requires
+specific names for the timestamp (myDate) and parameter (analyte) in
+order for functions to work.
 
-Now we have to prepare the dataset for trend analysis. This is set out
-in seven repeatable steps which each involve a specific LWPTrends
+Finally, we can apply the str() function we can see that we now have
+four columns: ‘Aquarius.\_SIteID’,‘myDate’,‘MCI’, and ‘analyte’, which
+have the class ‘chr’,‘Date’,‘num’, and ‘chr’, respectively.
+
+``` r
+MCI_Data <- MCI_Data %>%
+    select(Aquarius._SIteID, myDate, MCI) %>%
+    mutate(analyte = "MCI")  #create a new column called 'analyte' where every row is equal to 'MCI'
+
+str(MCI_Data)
+```
+
+    ## 'data.frame':    18 obs. of  4 variables:
+    ##  $ Aquarius._SIteID: chr  "Waiari at Te Puke Highway" "Waiari at Te Puke Highway" "Waiari at Te Puke Highway" "Waiari at Te Puke Highway" ...
+    ##  $ myDate          : Date, format: "2003-01-01" "2004-01-01" ...
+    ##  $ MCI             : num  101 115 119 129 102 ...
+    ##  $ analyte         : chr  "MCI" "MCI" "MCI" "MCI" ...
+
+Now we are ready to begin a series of steps to prepare the dataset for
+trend analysis. There are seven generic steps that can be applied to any
+trend-analysis task, each of which involves a specific LWPTrends
 function.
 
   
@@ -165,7 +201,7 @@ necessary information that allows steps 3-6 to determine which year,
 month, and quarter each date relates to.
 
 ``` r
-#Add on time increment and extra date information - NOTE if this dataset was is based on Water Years firstMonth = 7
+#Add on time increment and extra date information.
 MCI_Data <- GetMoreDateInfo(MCI_Data)
 ```
 
@@ -173,13 +209,14 @@ MCI_Data <- GetMoreDateInfo(MCI_Data)
 
 2.  **Process censored values.**
 
-Now we need to apply the ***‘RemoveAlphaDetect()’*** function, which
-takes a dataframe that might include censored values (specified as the
-prefix \> or \<,column is type character) and returns face values and
-information about the nature of the censoring.
-
-In this case, our data is uncensored, but we still need to run this
-function to move to the next stage.
+Now we need to apply the ***‘RemoveAlphaDetect()’*** function. This
+removes all of the censored values from our dataset, i.e., all the
+values that are less than or greater than the laboratory’s detection
+limit. These are often seen in water quality datasets as ‘\<’ or ‘\>’
+symbols before a value. Of course, MCI data is based on taxonomic
+analysis so we shouldn’t see any censored values in our dataset.
+Regardless, the LWPTrends package requires us to process the dataset in
+the same way.
 
 ``` r
 #Process censored values
@@ -188,8 +225,9 @@ MCI_Data <- RemoveAlphaDetect(MCI_Data,ColToUse="MCI")
 
 This function will provide a new column ‘RawValue’ with the raw data,
 alongside two additional columns that detail whether each value was
-censored and what type of censor it was. This information is passed to
-the trend analysis function in future steps.
+censored and what type of censor it was. Open MCI_Data to have a look
+for yourself if you’re interested. This information is passed to the
+trend analysis function in future steps.
 
 The LWPTrends package handles censored values in two ways. For point
 statistics such as means, standard deviations or quantiles, left
@@ -273,7 +311,8 @@ three-plot ggarrange object as the second row of another ggplot object.
 This allows you to see a large version of the time series data, and have
 smaller versions of the matrix plots. This comes directly from Ton and
 Caroline (don’t blame me..), but I think it makes a very handy
-diagnostic dashboard.
+diagnostic dashboard. Remember that you can click on the ‘zoom’ button
+in the ‘Plots’ pane to make the image bigger.
 
   
 
@@ -284,7 +323,7 @@ ggarrange(MCI_Inspect[[3]][[1]],
                     MCI_Inspect[[3]][[4]],nrow=1,align="h"),nrow=2)
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 Hopefully you can see that we have gaps in 2009, 2011, and 2012. These
 gaps mean that we only have observations for 85% of years and 85% of
@@ -296,14 +335,15 @@ lenient. Let’s do the latter.
 
 ------------------------------------------------------------------------
 
-***Challenge 2:*** *Add ‘Change the propYearTol and propInrTol
-requirements to 0.8 in the InspectTrendData function. Make sure this is
-defined as an object named ’MCI_Inspect’. Look at the second sub-list
-object to see if anything has changed*
+***Challenge 2:*** *Change the propYearTol and propInrTol requirements
+to 0.8 in the InspectTrendData function. Make sure this is defined as an
+object named ‘MCI_Inspect’. Look at the second sub-list object to see if
+anything has changed*
 
 <details>
 
 <summary><b>Click to see a solution</b></summary>
+
 
 ``` r
 MCI_Inspect <- InspectTrendData(MCI_Data,
@@ -338,7 +378,9 @@ MCI_Inspect[[2]]
 
 Hooray, the ‘Year’ time increment now has ‘TRUE’ in the ‘DataOK’ column.
 We can move on, but first we need to save the appended datasets for the
-next step.
+next step. It’s fine to overwrite our original ‘MCI_Data’ object with
+the new appended dataset because the latter is identical, aside from the
+addition of a ‘TimeIncr’ column.
 
 ``` r
 MCI_Data <- MCI_Inspect[[1]]
@@ -368,7 +410,7 @@ MCI_Trend_Analysis_Output<-NonSeasonalTrendAnalysis(MCI_Data,mymain="Ex 1 Raw Tr
 MCI_Trend_Analysis_Output[[2]]
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 7.  **Classify the output.**
 
@@ -398,7 +440,7 @@ MCI_Trend_Analysis_Output <- MCI_Trend_Analysis_Output[[1]]
 MCI_Trend_Analysis_Output$analyte <- "MCI"
 
 MCI_Trend_Analysis_Output <-MCI_Trend_Analysis_Output %>% 
-  mutate(Direction = AssignConfCat(MCI_Trend_Analysis_Output,CatType="Improve",Reverse=c("VC","MCI")))
+  mutate(Direction = AssignConfCat(MCI_Trend_Analysis_Output,CatType="Improve",Reverse=c("MCI")))
 
 MCI_Trend_Analysis_Output
 ```
@@ -408,15 +450,27 @@ MCI_Trend_Analysis_Output
     ##          Cd prop.censored prop.unique no.censorlevels TimeIncr    SeasIncr
     ## 1 0.9990517             0           1               0   Annual NonSeasonal
     ##     Median AnnualSenSlope   Sen_Lci    Sen_Uci AnalysisNote
-    ## 1 108.7808      -1.266876 -1.938812 -0.6352487           ok
+    ## 1 108.7808      -1.267192 -1.938432 -0.6354775           ok
     ##   Percent.annual.change TrendDirection analyte             Direction
-    ## 1             -1.164614     Decreasing     MCI Very likely degrading
+    ## 1             -1.164904     Decreasing     MCI Very likely degrading
 
 Look in the last column and we can see that the trend is ‘Very likely
 degrading’.
 
 Congratulations, you have just completed your first trend analysis using
-the LWPTrends package. Now for something a bit more challenging.
+the LWPTrends package. Although the data and methods may change, the
+general proceedure remains the same. Just remember the seven step
+process:
+
+1.  Append date information.
+2.  De-censor the data.
+3.  Inspect the data.
+4.  Check seasonality.
+5.  Adjust for co-variates.
+6.  Analyse.
+7.  Classify.
+
+Now for something a bit more challenging.
 
 ## River Water Quality Data
 
@@ -426,12 +480,14 @@ Rangitaiki River.
 
 ------------------------------------------------------------------------
 
-***Challenge 3:*** *Load the ‘DF_for_Trends.csv’ dataset and ensure that
-the Time column is formatted as a timestamp. *
+***Challenge 3:*** *Load the ‘DF_for_Trends.csv’ dataset as an object
+named ‘WQ_Data’. Ensure that the Time column is formatted as a timestamp
+using the ‘parse_date_time()’ function from previous lessons.*
 
 <details>
 
 <summary><b>Click to see a solution</b></summary>
+
 
 ``` r
 WQ_Data <- read.csv("./Datasets/DF_for_Trends.csv")
@@ -449,12 +505,14 @@ Let’s view the data so we can see what we are dealing with.
 ------------------------------------------------------------------------
 
 ***Challenge 4:*** *Create a ggplot where x=Time and y=Value and facet
-this by ‘LocationName + analyte’ so we can look at all variables. You
-can also add ‘colour=analyte’ for geom_point if you wish.*
+this by ‘LocationName + analyte’ so we can look at all variables.
+Remember to add scales = “free” so you can see the data for each facet
+clearly. You can also add ‘colour=analyte’ for geom_point if you wish.*
 
 <details>
 
 <summary><b>Click to see a solution</b></summary>
+
 
 ``` r
 WQ_Data %>%
@@ -464,7 +522,7 @@ WQ_Data %>%
   facet_wrap(~LocationName+analyte,scales="free")
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 </details>
 
 ------------------------------------------------------------------------
@@ -480,22 +538,23 @@ WQ_Data %>%
   facet_wrap(~LocationName+analyte,scales="free")
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 We might also decide that we want to remove outliers. Outliers are
-difficuly to remove manually, but fortunately there is a package called
+difficult to remove manually, but fortunately there is a package called
 ‘outliers’ that can help. The function of interest within the outliers
 package is called ‘scores()’ but this requires a fair bit of data
 manipulation to adapt to our datasets.
 
 But don’t fret, I have developed a function called
-***‘Outliers_Z_Score()’*** which does all the hard work for you. All you
-need to do is input your dataframe in the form of “LocationName”,
-“Site”, “Time”, “analyte”, “Value”, and set the probability that you are
-happy with. I called this function ‘Outliers_Z_Score’ but you actually
-use other methods as well, just set the ‘type’ input to one of the
-following: (“z”, “t”, “chisq”, “mad”). This function can either return a
-dataframe of ‘outliers’ or a dataframe of non-outlier, i.e., ‘values’.
+***‘Outliers_Z_Score()’***, contained within the LWPTrends package,
+which does all the hard work for you. All you need to do is input your
+dataframe in the form of “LocationName”, “Site”, “Time”, “analyte”,
+“Value”, and set the probability that you are happy with. I called this
+function ‘Outliers_Z_Score’ but you actually use other methods as well,
+just set the ‘type’ input to one of the following: (“z”, “t”, “chisq”,
+“mad”). This function can either return a dataframe of ‘outliers’ or a
+dataframe of non-outlier, i.e., ‘values’.
 
 We will use a probability of 0.99 and use a z score to define outliers
 in our dataset. We can then compare this to our original dataset and
@@ -524,7 +583,7 @@ WQ_Data%>%
   facet_wrap(~LocationName+analyte,scales="free")
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 The blue dots in the figure above show which points have been identified
 as an outlier.
@@ -539,6 +598,7 @@ WQ_Data*
 <details>
 
 <summary><b>Click to see a solution</b></summary>
+
 
 ``` r
 #run the outliers function.  This creates a dataset of outlier values
@@ -563,7 +623,7 @@ WQ_Data%>%
   facet_wrap(~LocationName+analyte,scales="free")
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 WQ_Data <- WQ_Data %>%
@@ -577,8 +637,8 @@ WQ_Data <- WQ_Data %>%
 
 Okay, good job. To make things a bit simpler for the next part we will
 only look at one site and one variable. We will come back to look at the
-other sites and variable in part 2 of this lesson when we learn how to
-batch process trends.
+other sites and variables another time when we learn how to batch
+process trend data (Trend Analysis - Part 2).
 
 Let’s work with NNN at Rangitaiki at Te Teko.
 
@@ -606,6 +666,7 @@ date with the name ‘myDate’*
 
 <summary><b>Click to see a solution</b></summary>
 
+
 ``` r
 NNN_Te_Teko <- NNN_Te_Teko %>% 
   mutate(myDate = as.Date(Time,tz="etc/GMT+12")) %>% 
@@ -632,7 +693,7 @@ ggarrange(Inspect_Output_NNN_Te_Teko[[3]][[1]],
                     Inspect_Output_NNN_Te_Teko[[3]][[4]],nrow=1,align="h"),nrow=2)
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 Okay. We can see that we have a few gaps and a few duplicates but
 nothing too bad. LWPTrends handles duplicate values within each time
@@ -640,9 +701,9 @@ increment by taking the value that is closest to the mid-point of that
 increment. You can also tell it to take the median if you want.
 
 If we look at the second sub-list item we can see that all time
-increments are satisfied. The output will allocate the time increment as
-the most frequent increment that satisfies all requirements, in this
-case ‘month’.
+increments are satisfied by looking at the column ‘DataOK’. The output
+will allocate the time increment as the most frequent increment that
+satisfies all requirements, in this case ‘month’.
 
 ``` r
 Inspect_Output_NNN_Te_Teko[[2]]
@@ -698,6 +759,7 @@ conclusion of whether the data is seasonal or not.*
 
 <summary><b>Click to see a solution</b></summary>
 
+
 ``` r
 Season_Output[[2]]
 ```
@@ -713,7 +775,7 @@ Season_Output[[2]]
 Season_Output[[3]]
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 ``` r
 #This figure shows it nicely - it looks like nitrate concentrations peak over the winter months and are their lowest in summer. 
@@ -735,7 +797,7 @@ potential co-variate, and then adjust our final values based on the
 values of the co-variate. For example, the concentration of an analyte
 is often related to discharge in rivers as this usually means there has
 been rainfall and mobilisation of contaminants sourced from the land. If
-this was the case, then an trends we find in our data could actually be
+this was the case, then any trends we find in our data could actually be
 caused by changes in river discharge rather than increased losses or
 loading from within the catchment.
 
@@ -780,7 +842,7 @@ CV_Output<-AdjustValues(NNN_Te_Teko, method = c("Gam", "LogLog", "LOESS"), Value
 AdjustValues() produces yet another list object, but this time there are
 only two sub-list components: 1) a dataset of model performance (note
 that this is NOT an appended dataset), and 2) a plot of the different
-mondels.
+models.
 
 Let’s look at component 2 first.
 
@@ -788,7 +850,7 @@ Let’s look at component 2 first.
 CV_Output[[2]]
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-29-1.png)<!-- --> We can
+![](Instructions_files/figure-gfm/unnamed-chunk-30-1.png)<!-- --> We can
 see that all models are technically significant (p\<0.05). However, some
 models look better than others. The LogLog (green) model doesn’t appear
 to represents this releationship as well as the Gam or LOESS models. The
@@ -819,26 +881,26 @@ NNN_Te_Teko <- NNN_Te_Teko %>%
 #create a time-series plot of the flow adjusted results.
 P_FA <- NNN_Te_Teko %>% 
   ggplot()+
-  geom_point(aes(x=Time,y=Flow_Adjusted))+
+  geom_point(aes(x=myDate,y=Flow_Adjusted))+
   theme_bw()
 
 #create a time-series plot of the raw results.
 P_RD <- NNN_Te_Teko %>% 
   ggplot()+
-  geom_point(aes(x=Time,y=RawValue))+
+  geom_point(aes(x=myDate,y=RawValue))+
   theme_bw()
 
 #create a time-series plot of the discharge.
 P_DC <- NNN_Te_Teko %>% 
   ggplot()+
-  geom_line(aes(x=Time,y=Discharge),colour="midnightblue")+
+  geom_line(aes(x=myDate,y=Discharge),colour="midnightblue")+
   theme_bw()
 
 #combine them together in a ggarrange figure. 
 ggarrange(P_RD,P_FA,P_DC,nrow=3, align = "h")
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 
 Hmm..I will leave you to come to your own conclusion, but you can see
 why Snelder et al. (2021) think flow adjustment can be subjective.
@@ -861,7 +923,7 @@ Trend_Analysis_Output_NNN_Te_Teko <-SeasonalTrendAnalysis(NNN_Te_Teko, ValuesToU
 Trend_Analysis_Output_NNN_Te_Teko[[2]]
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
   
 
@@ -909,7 +971,7 @@ Trend_Analysis_Output_NNN_Te_Teko_Raw <-SeasonalTrendAnalysis(NNN_Te_Teko, Value
 Trend_Analysis_Output_NNN_Te_Teko_Raw[[2]]
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](Instructions_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 ``` r
 Trend_Analysis_Output_NNN_Te_Teko_Raw <- Trend_Analysis_Output_NNN_Te_Teko_Raw[[1]]
@@ -936,5 +998,6 @@ The un-adjusted trend would be ‘Very likely degrading’.
 ------------------------------------------------------------------------
 
 Well, that’s it for this lesson but we have only covered half of the
-trend analysis content. I will try to develop a follow up lesson where
-we use the rest of the WQ_Data dataset to look at batch processing.
+trend analysis content. I will try to develop a follow up lesson (Trend
+Analysis - Part 2) where we use the rest of the WQ_Data dataset to look
+at batch processing.
