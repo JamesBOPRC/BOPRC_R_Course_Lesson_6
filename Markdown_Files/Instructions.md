@@ -391,15 +391,15 @@ addition of a ‘TimeIncr’ column.
 MCI_Data <- MCI_Inspect[[1]]
 ```
 
-4.  **Check for seasonality**
+4.  **Define a co-variate and test relationship.**
 
-We can skip this step given that we are using annual data, i.e., there
-are no seasons.
+We can skip this part given that we will not be adjusting our data based
+on a co-variate. We will explore this with the WQ dataset.
 
-5.  **Define a co-variate and test relationship.**
+5.  **Check for seasonality**
 
-Again, we can skip this part given that we will not be adjusting our
-data based on a co-variate. We will explore this with the WQ dataset.
+Again, we can skip this step given that we are using annual data, i.e.,
+there are no seasons.
 
 6.  **Run trend analysis.**
 
@@ -470,8 +470,8 @@ process:
 1.  Append date information.
 2.  De-censor the data.
 3.  Inspect the data.
-4.  Check seasonality.
-5.  Adjust for co-variates.
+4.  Adjust for co-variates.
+5.  Check for seasonality.
 6.  Analyse.
 7.  Classify.
 
@@ -742,79 +742,17 @@ NNN_Te_Teko <- Inspect_Output_NNN_Te_Teko[[1]]
 
   
 
-4.  **Check for seasonality.**
+4.  **Define a co-variate and test relationship.**
 
-Our time increment for NNN_Te_Teko is monthly so it’s highly likely
-there could be some seasonality in the data (i.e., some months could
-have higher concentrations than others due to climatic or anthropogenic
-factors). If the data are seasonal, we need to use a different trend
-analysis function than for non-seasonal data. But how do we determine if
-the data are seasonal? LWPTrends has a function for that called
-***‘GetSeason()’***. GetSeason performs a Kruskal Wallis
-(non-parametric) test on the observations using the time increment as
-the explainatory variable. Use of this function is simple, you just need
-to input the dataset and tell it which column to look at.
-
-``` r
-Season_Output<-GetSeason(NNN_Te_Teko,ValuesToUse = "RawValue",mymain="Example 1",do.plot = TRUE)
-```
-
-This function outputs another list object with three sub-list
-components: 1) an appended dataset, 2) the output from the
-Kruskal-Wallis test, and 3) a graph showing the output.
-
-------------------------------------------------------------------------
-
-***Challenge 7:*** *Look at sub-list components 2 and 3 and come to a
-conclusion of whether the data is seasonal or not.*
-
-<details>
-
-<summary style="display: inline-block;">
-
-<b>Click to see a solution</b>
-</summary>
-
-``` r
-Season_Output[[2]]
-```
-
-    ##                            Observations   KWstat       pvalue SeasNote TimeIncr
-    ## Kruskal-Wallis chi-squared          826 149.7574 1.670623e-26       ok  Monthly
-    ##                             Season
-    ## Kruskal-Wallis chi-squared Monthly
-
-``` r
-#The Kruskal-Wallis test has a p value of 1.670623e-26 which means the data is highly seasonal.
-
-Season_Output[[3]]
-```
-
-![](Instructions_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
-
-``` r
-#This figure shows it nicely - it looks like nitrate concentrations peak over the winter months and are their lowest in summer. 
-
-#We need to run a seasonal trend analysis.
-```
-
-</details>
-
-------------------------------------------------------------------------
-
-5.  **Define a co-variate and test relationship.**
-
-Okay, we know the data is seasonal, but could this be caused by
-seasonality in a co-variate, e.g. river discharge or rainfall? This is
-where co-variate adjustment comes in handy. The LWPTrends package allows
-us to determine the relationship between our observations and a
-potential co-variate, and then adjust our final values based on the
-values of the co-variate. For example, the concentration of an analyte
-is often related to discharge in rivers as this usually means there has
-been rainfall and mobilisation of contaminants sourced from the land. If
-this was the case, then any trends we find in our data could actually be
-caused by changes in river discharge rather than increased losses or
-loading from within the catchment.
+The LWPTrends package allows us to determine the relationship between
+our observations and a potential co-variate, and then adjust our final
+values based on the values of the co-variate. For example, the
+concentration of an analyte is often related to discharge in rivers as
+this usually means there has been rainfall and mobilisation of
+contaminants sourced from the land. If this was the case, then any
+trends we find in our data could actually be caused by changes in river
+discharge rather than increased losses or loading from within the
+catchment.
 
 With that being said, Snelder et al. (2021) **do not recommend using
 flow adjusted trends for regional applications** (i.e., assessing and
@@ -835,22 +773,19 @@ flow) assumes that the concentration - flow relationship is constant
 through time. Violations of this assumption will affect the robustness
 of flow adjustment.
 
-So in short, it’s complicated and somewhat subjective as to whether you
-should actually adjust values by discharge or not. But for the sake of
-this lesson, we will continue with the adjustment process using river
-discharge as a co-variate. The function we will use is called
-***‘AdjustValues()’*** and there is a long list of possible inputs that
-we can change. Luckily, most of these have default values so we don’t
-really need to worry about them. We do, however, need to provide the
-dataset (referred to a ‘x’ - NNN_Te_Teko), the column that contains the
-values (referred to as ‘ValuesToAdjust’ - RawValue), and the column that
-contains the covariate (referred to as ‘Covariate’ - Discharge).
+So in short, co-variate adjustment is complicated and requires
+significant experience as to whether you should accept certain models or
+not. But for the sake of this lesson, we will continue with the
+adjustment process using river discharge as a co-variate. The function
+we will use is called ***‘AdjustValues()’*** and there is a long list of
+possible inputs that we can change. Luckily, most of these have default
+values so we don’t really need to worry about them. We do, however, need
+to provide the dataset (referred to a ‘x’ - NNN_Te_Teko), the column
+that contains the values (referred to as ‘ValuesToAdjust’ - RawValue),
+and the column that contains the covariate (referred to as ‘Covariate’ -
+Discharge).
 
 ``` r
-#take the seasonally appended dataset
-NNN_Te_Teko <- Season_Output[[1]]
-
-
 CV_Output<-AdjustValues(NNN_Te_Teko, method = c("Gam", "LogLog", "LOESS"), ValuesToAdjust = "RawValue", Covariate = "Discharge", Span = c(0.7), do.plot =T, plotpval=T, mymain="Example 1a")
 ```
 
@@ -865,24 +800,24 @@ Let’s look at component 2 first.
 CV_Output[[2]]
 ```
 
-![](Instructions_files/figure-gfm/unnamed-chunk-30-1.png)<!-- --> We can
+![](Instructions_files/figure-gfm/unnamed-chunk-28-1.png)<!-- --> We can
 see that all models are technically significant (p\<0.05). However, some
 models look better than others. The LogLog (green) model doesn’t appear
-to represents this releationship as well as the Gam or LOESS models. The
+to represents this relationship as well as the Gam or LOESS models. The
 Gam and LOESS models are close, but the LOESS model seems to provide
 better representation at lower flows. We can also see the R2 values in
 the plot legend, which align with our visual assessment, i.e., Gam and
 LOESS have an R2 of 0.23, i.e., discharge explains 23% of the variance
 in NNN concentrations.
 
-We might decide that 23% is a significant amount, and that we need to
-address this. Let’s take the LOESS model, and we will also plot up the
-new dataset to see what our new flow adjusted points look like. As
-mentioned above, flow adjustment is not recommended for regional data,
-therefore LWP have not made the output from the AdjustValues function
-fit seamlessly into the next step. Therefore, we need to do some tidying
-up before we can move on. Let’s tidy up this output and plot the new
-adjusted values to see what the look like.
+We will need to pick an adjustment model if we decide that we need to
+address this level of variability. Let’s take the LOESS model, and we
+will also plot up the new dataset to see what our new flow adjusted
+points look like. As mentioned above, flow adjustment is not recommended
+for regional data, therefore LWP have not made the output from the
+AdjustValues function fit seamlessly into the next step. Therefore, we
+need to do some tidying up before we can move on. Let’s tidy up this
+output and plot the new adjusted values to see what the look like.
 
 ``` r
 #take the output from the AdjustValues function. 
@@ -915,19 +850,87 @@ P_DC <- NNN_Te_Teko %>%
 ggarrange(P_RD,P_FA,P_DC,nrow=3, align = "h")
 ```
 
+![](Instructions_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+
+Hmm..I will leave you to come to your own conclusion on the validity of
+this model. But let’s continue by taking the flow adjusted values
+through to the final three steps.
+
+  
+
+5.  **Check for seasonality.**
+
+Our time increment for NNN_Te_Teko is monthly so it’s highly likely
+there could be some seasonality in the data (i.e., some months could
+have higher concentrations than others due to climatic or anthropogenic
+factors). Accounting for systematic seasonal variation should increase
+the statistical power of the trend assessment.
+
+We need to use a different trend analysis function if the data are found
+to be seasonal. But how do we figure this out? LWPTrends has a function
+called ***‘GetSeason()’*** which allows you to do just that. GetSeason
+performs a Kruskal Wallis (non-parametric) test on the observations
+using the time increment as the explainatory variable. Use of this
+function is simple, you just need to input the dataset and tell it which
+column to look at. In our example, we have adjusted our data based on
+discharge and re-named the model output as ‘Flow_Adjusted’, so we will
+need to use this column.
+
+``` r
+Season_Output<-GetSeason(NNN_Te_Teko,ValuesToUse = "Flow_Adjusted",mymain="Example 1",do.plot = TRUE)
+```
+
+This function outputs another list object with three sub-list
+components: 1) an appended dataset, 2) the output from the
+Kruskal-Wallis test, and 3) a graph showing the output.
+
+------------------------------------------------------------------------
+
+***Challenge 7:*** *Look at sub-list components 2 and 3 and come to a
+conclusion of whether the data is seasonal or not.*
+
+<details>
+
+<summary style="display: inline-block;">
+
+<b>Click to see a solution</b>
+</summary>
+
+``` r
+NNN_Te_Teko <- Season_Output[[1]]
+#Overwrite our dataframe with the seasonally appended dataframe.
+
+Season_Output[[2]]
+```
+
+    ##                            Observations  KWstat       pvalue SeasNote TimeIncr
+    ## Kruskal-Wallis chi-squared          800 104.848 1.948676e-17       ok  Monthly
+    ##                             Season
+    ## Kruskal-Wallis chi-squared Monthly
+
+``` r
+#The Kruskal-Wallis test has a p value of 1.948676e-17  which means the data is seasonal.
+
+Season_Output[[3]]
+```
+
 ![](Instructions_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 
-Hmm..I will leave you to come to your own conclusion, but you can see
-why Snelder et al. (2021) think flow adjustment can be subjective.
+``` r
+#This figure shows the seasonal pattern in the data. 
 
-Regardless, let’s take the flow adjusted values through to the final two
-steps.
+#We need to run a seasonal trend analysis.
+```
+
+</details>
+
+------------------------------------------------------------------------
 
   
 
 6.  **Run trend analysis.**
 
-We know from step 4 that we need to run a seasonal trend analysis. The
+Okay, we now know that we need to run a seasonal trend analysis. The
 function for this is called ***‘SeasonalTrendAnalysis()’*** and we need
 to tell it to use our ‘Flow_Adjusted’ column, but keep the ‘RawValue’
 column for descriptive statistics. You can do this using the code below:
@@ -999,14 +1002,14 @@ Trend_Analysis_Output_NNN_Te_Teko_Raw$Direction <- AssignConfCat(Trend_Analysis_
 Trend_Analysis_Output_NNN_Te_Teko_Raw
 ```
 
-    ##   nObs nTimeIncr    S     VarS    D       tau        Z            p C
-    ## 1  826       420 2712 59795.33 7154 0.3790886 11.08654 1.458258e-28 1
-    ##             Cd prop.censored prop.unique no.censorlevels TimeIncr SeasIncr
-    ## 1 7.291291e-29             0   0.3474576               0  Monthly  Monthly
-    ##   Median AnnualSenSlope     Sen_Lci     Sen_Uci AnalysisNote
-    ## 1 0.3755    0.005538401 0.004753135 0.006391111           ok
-    ##   Percent.annual.change TrendDirection analyte             Direction
-    ## 1               1.47494     Increasing     NNN Very likely degrading
+    ##   nObs nTimeIncr    S  VarS    D       tau        Z            p C           Cd
+    ## 1  800       412 2592 57138 6910 0.3751085 10.83939 2.239561e-27 1 1.119781e-27
+    ##   prop.censored prop.unique no.censorlevels TimeIncr SeasIncr Median
+    ## 1             0       0.355               0  Monthly  Monthly 0.3735
+    ##   AnnualSenSlope     Sen_Lci     Sen_Uci AnalysisNote Percent.annual.change
+    ## 1    0.005424421 0.004689138 0.006326292           ok              1.452322
+    ##   TrendDirection analyte             Direction
+    ## 1     Increasing     NNN Very likely degrading
 
 The un-adjusted trend would be ‘Very likely degrading’.
 
